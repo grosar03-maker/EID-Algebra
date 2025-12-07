@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white"><b>Entrada 2D</b></div>
+            <div class="card-body">
+                <form method="POST">
+                    <label>Función f(x, t, z...):</label>
+                    <input type="text" class="form-control mb-2" name="funcion" value="{{ func_prev }}" placeholder="Ej: sin(x) + 1" required>
+                    <label>Evaluar Punto (Opcional):</label>
+                    <input type="number" step="any" class="form-control mb-3" name="valor_z" value="{{ z_prev }}">
+                    <button class="btn btn-primary w-100">Analizar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        {% if resultado %}
+            {% if resultado.error %}
+                <div class="alert alert-danger">{{ resultado.error }}</div>
+            {% else %}
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="text-center text-secondary">Gráfico Interactivo</h5>
+                        <div style="height:350px;"><canvas id="miGrafico"></canvas></div>
+                        <hr>
+                        <table class="table table-bordered table-sm mt-3">
+                            <tr><th>Dominio</th><td>$$ {{ resultado.dominio }} $$</td></tr>
+                            <tr><th>Recorrido</th><td>$$ {{ resultado.recorrido }} $$</td></tr>
+                            <tr><th>Intersección Y</th><td>{{ resultado.intersecciones_y }}</td></tr>
+                            <tr><th>Raíces</th><td>$$ \{ {{ resultado.intersecciones_x }} \} $$</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    const ctx = document.getElementById('miGrafico').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: {{ resultado.grafico_datos.x | tojson }},
+                            datasets: [{
+                                label: 'f = {{ func_prev }}',
+                                data: {{ resultado.grafico_datos.y | tojson }},
+                                borderColor: '#0d6efd', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false
+                            }
+                            {% if resultado.evaluacion_z %}
+                            ,{
+                                label: 'Punto Evaluado',
+                                data: [{x: {{ resultado.evaluacion_z.x }}, y: {{ resultado.evaluacion_z.y }}}],
+                                backgroundColor: 'red', pointRadius: 6, type: 'scatter'
+                            }
+                            {% endif %}]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                </script>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5 text-muted"><h3>Bienvenido</h3><p>Ingresa una función para comenzar.</p></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
