@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proyecto EID | Álgebra</title>
+    <title>Analizador Trigonométrico</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -11,39 +11,59 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar-brand { font-weight: bold; letter-spacing: 1px; }
+        /* ESTILOS PERSONALIZADOS (CSS)
+           ----------------------------
+           Ajustes específicos para cumplir con la identidad visual institucional
+           y mejorar la experiencia de usuario (layout flexible).
+        */
+        body { 
+            background-color: #f8f9fa; /* Fondo gris muy suave para no cansar la vista */
+            min-height: 100vh;         /* Asegura que el cuerpo ocupe al menos el 100% de la altura de la pantalla */
+            display: flex;             /* Usamos Flexbox para la estructura vertical */
+            flex-direction: column;    /* Organiza los elementos en columna (Header -> Contenido -> Footer) */
+        }
+
+        /* Encabezado con los colores institucionales de la UCT (Azul oscuro) */
+        .header-uct { 
+            background-color: #003366; 
+            color: white; 
+            padding: 30px 0; 
+            margin-bottom: 30px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Sombra suave para dar profundidad */
+        }
+        
+        h1 { 
+            font-weight: 700; 
+            letter-spacing: 1px; /* Espaciado para mejorar legibilidad del título */
+        }
+        
+        /* Clase crítica para el "Sticky Footer":
+           Hace que el contenido principal crezca (flex: 1) para ocupar todo el espacio disponible,
+           empujando el pie de página hacia el final de la ventana, incluso si hay poco contenido.
+        */
+        .main-container {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow">
+    <header class="header-uct text-center">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('inicio') }}">MAT1185</a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('inicio') }}">Analizador 2D</a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('pagina_3d') }}" style="color: #ffc107;">
-                            <b>Bonus 3D</b>
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <h1>Analizador de Funciones Trigonométricas</h1>
         </div>
-    </nav>
+    </header>
 
-    <div class="container pb-5">
+    <div class="container pb-5 main-container">
         {% block contenido %}{% endblock %}
     </div>
+
+    <footer class="text-center text-muted py-4 border-top bg-light">
+        <div class="container">
+            <p class="mb-1 fw-bold">MAT1185 - Álgebra para la Computación</p>
+            <p class="mb-0 small">Facultad de Ingeniería | Universidad Católica de Temuco</p>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
