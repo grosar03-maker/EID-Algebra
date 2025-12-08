@@ -1,51 +1,48 @@
 import sys
 import os
 
-# TRUCO CRÍTICO: Forzamos a Python a mirar en la carpeta actual
-# para encontrar 'logica_matematica.py' y 'templates'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# --- CONFIGURACIÓN CRÍTICA PARA SERVIDOR PILLAN ---
+# Forzamos a Python a mirar en el directorio actual para encontrar los módulos.
+# Sin esto, el servidor CGI a veces pierde la referencia de dónde están los archivos.
+directorio_actual = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, directorio_actual)
+# --------------------------------------------------
 
 from flask import Flask, render_template, request
-# Importamos ambas funciones de tu lógica (2D y 3D)
-from logica_matematica import analizar_funcion, generar_datos_3d
+from logica_matematica import analizar_funcion
 
 app = Flask(__name__)
-# Clave secreta necesaria para formularios seguros
-app.config['SECRET_KEY'] = 'clave_secreta_eid_2025'
 
-# --- RUTA 1: EL ANALIZADOR 2D (Página Principal) ---
+# Clave secreta necesaria para proteger los formularios contra ataques CSRF, etc.
+app.config['SECRET_KEY'] = 'clave_secreta_eid_algebra_2025'
+
+# Ruta principal: Maneja tanto la carga inicial (GET) como el envío del formulario (POST)
 @app.route('/', methods=['GET', 'POST'])
 def inicio():
-    datos = None
-    func = ""
-    z_val = ""
-    
-    if request.method == 'POST':
-        # Capturamos datos del formulario 2D
-        func = request.form.get('funcion', '')
-        z_val = request.form.get('valor_z', '')
-        
-        if func:
-            # Llamamos a la lógica 2D
-            datos = analizar_funcion(func, z_val)
-            
-    return render_template('index.html', resultado=datos, func_prev=func, z_prev=z_val)
+    datos_resultado = None
+    funcion_ingresada = ""
+    valor_z = ""
 
-# --- RUTA 2: EL GENERADOR 3D (El Bonus) ---
-@app.route('/3d', methods=['GET', 'POST'])
-def pagina_3d():
-    datos = None
-    func = ""
-    
     if request.method == 'POST':
-        # Capturamos datos del formulario 3D
-        func = request.form.get('funcion', '')
-        
-        if func:
-            # Llamamos a la lógica 3D
-            datos = generar_datos_3d(func)
-            
-    return render_template('3d.html', datos=datos, func_prev=func)
+        # 1. Recibimos los datos que el usuario escribió en el HTML
+        funcion_ingresada = request.form.get('funcion', '')
+        valor_z = request.form.get('valor_z', '')
+
+        # 2. Validación básica: que no esté vacío
+        if not funcion_ingresada.strip():
+            datos_resultado = {
+                'error': "Por favor, ingresa una función trigonométrica válida (ej: sin(x))."
+            }
+        else:
+            # 3. Delegamos el trabajo pesado a nuestro módulo de lógica
+            datos_resultado = analizar_funcion(funcion_ingresada, valor_z)
+
+    # 4. Enviamos la respuesta al navegador pintando la plantilla 'index.html'
+    return render_template('index.html', 
+                           resultado=datos_resultado, 
+                           func_prev=funcion_ingresada,
+                           z_prev=valor_z)
 
 if __name__ == '__main__':
+    # Modo debug activado para desarrollo local
     app.run(debug=True)
