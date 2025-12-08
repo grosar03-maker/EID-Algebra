@@ -1,64 +1,199 @@
 {% extends "base.html" %}
+
 {% block contenido %}
-<div class="row">
-    <div class="col-md-4">
+<div class="row justify-content-center">
+    
+    <div class="col-md-4 mb-4">
+        
         <div class="card shadow-sm mb-3">
-            <div class="card-header bg-white"><b>Entrada 2D</b></div>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Ingreso de Datos</h5>
+            </div>
             <div class="card-body">
                 <form method="POST">
-                    <label>Función f(x, t, z...):</label>
-                    <input type="text" class="form-control mb-2" name="funcion" value="{{ func_prev }}" placeholder="Ej: sin(x) + 1" required>
-                    <label>Evaluar Punto (Opcional):</label>
-                    <input type="number" step="any" class="form-control mb-3" name="valor_z" value="{{ z_prev }}">
-                    <button class="btn btn-primary w-100">Analizar</button>
+                    <div class="mb-3">
+                        <label for="funcion" class="form-label fw-bold">Función f(x):</label>
+                        <input type="text" class="form-control form-control-lg" id="funcion" name="funcion" 
+                               placeholder="ej: 2x + sin(x^2)" value="{{ func_prev }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="valor_z" class="form-label">Evaluar en Z (opcional):</label>
+                        <input type="number" step="any" class="form-control" id="valor_z" name="valor_z" 
+                               placeholder="ej: 1.57" value="{{ z_prev }}">
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1 fw-bold">
+                            Analizar Función
+                        </button>
+                        <a href="./" class="btn btn-secondary fw-bold" title="Borrar todo">
+                            Limpiar
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-light fw-bold text-secondary">
+                <i class="bi bi-book"></i> Referencia de Escritura
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item">
+                        <strong>Escritura Rápida:</strong><br>
+                        Multiplicación: <code>2x</code> (igual a <code>2*x</code>)<br>
+                        Potencias: <code>x^2</code> o <code>x**2</code>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Trigonometría:</strong><br>
+                        Básicas: <code>sin</code>, <code>cos</code>, <code>tan</code><br>
+                        Recíprocas: <code>sec</code>, <code>csc</code>, <code>cot</code><br>
+                        Inversas: <code>asin</code>, <code>acos</code>, <code>atan</code>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Otras Funciones:</strong><br>
+                        <code>sqrt(x)</code>, <code>log(x)</code>, <code>exp(x)</code>, <code>abs(x)</code>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Constantes:</strong><br>
+                        Pi (<strong>&pi;</strong>): Escribe <code>pi</code><br>
+                        Euler (<em>e</em>): Escribe <code>E</code>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
     </div>
+
     <div class="col-md-8">
         {% if resultado %}
+            
             {% if resultado.error %}
-                <div class="alert alert-danger">{{ resultado.error }}</div>
+                <div class="alert alert-danger shadow-sm border-start border-danger border-4">
+                    <h4 class="alert-heading">⚠️ Error</h4>
+                    <p class="mb-0">{{ resultado.error }}</p>
+                </div>
             {% else %}
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="text-center text-secondary">Gráfico Interactivo</h5>
-                        <div style="height:350px;"><canvas id="miGrafico"></canvas></div>
-                        <hr>
-                        <table class="table table-bordered table-sm mt-3">
-                            <tr><th>Dominio</th><td>$$ {{ resultado.dominio }} $$</td></tr>
-                            <tr><th>Recorrido</th><td>$$ {{ resultado.recorrido }} $$</td></tr>
-                            <tr><th>Intersección Y</th><td>{{ resultado.intersecciones_y }}</td></tr>
-                            <tr><th>Raíces</th><td>$$ \{ {{ resultado.intersecciones_x }} \} $$</td></tr>
+                
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-primary">Gráfico Interactivo</h5>
+                        <div class="d-flex align-items-center bg-light px-2 py-1 rounded border">
+                            <label for="sliderGrosor" class="me-2 small fw-bold mb-0">Grosor:</label>
+                            <input type="range" class="form-range" id="sliderGrosor" min="1" max="8" step="1" value="3" style="width: 80px;">
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-1">
+                        <div id="miPlotly" style="width: 100%; height: 500px;"></div>
+                        
+                        <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+                        <script>
+                            {% if resultado.grafico_datos %}
+                                // Configuración de la traza principal (la función)
+                                var traza1 = {
+                                    x: {{ resultado.grafico_datos.x | tojson }},
+                                    y: {{ resultado.grafico_datos.y | tojson }},
+                                    mode: 'lines',
+                                    name: 'f(x)',
+                                    line: {color: '#0d6efd', width: 3, shape: 'linear'}
+                                };
+                                var datos = [traza1];
+
+                                // Si hay un punto Z evaluado, agregamos una segunda traza (punto rojo)
+                                {% if resultado.evaluacion_z %}
+                                    var traza2 = {
+                                        x: [{{ resultado.evaluacion_z.x }}],
+                                        y: [{{ resultado.evaluacion_z.y }}],
+                                        mode: 'markers',
+                                        name: 'Punto Z',
+                                        marker: {color: '#dc3545', size: 10}
+                                    };
+                                    datos.push(traza2);
+                                {% endif %}
+
+                                // Configuración del Layout (Aspecto visual)
+                                var layout = {
+                                    autosize: true,
+                                    margin: {l:40, r:20, b:30, t:30},
+                                    hovermode: 'closest',
+                                    xaxis: {title: 'Eje X', zeroline: true, zerolinecolor: '#333'},
+                                    // scaleanchor asegura que el gráfico no se vea estirado
+                                    yaxis: {title: 'Eje Y', zeroline: true, zerolinecolor: '#333', scaleanchor: "x", scaleratio: 1},
+                                    showlegend: true,
+                                    legend: {orientation: "h", y: 1.1}
+                                };
+                                var config = {responsive: true, scrollZoom: true, displayModeBar: true};
+                                
+                                // Renderizar el gráfico
+                                Plotly.newPlot('miPlotly', datos, layout, config);
+
+                                // Lógica del Slider: Actualiza el grosor sin recargar
+                                document.getElementById('sliderGrosor').addEventListener('input', function (e) {
+                                    Plotly.restyle('miPlotly', {'line.width': parseInt(e.target.value)}, [0]); 
+                                });
+                            {% endif %}
+                        </script>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-bold bg-light">
+                        <i class="bi bi-table"></i> Propiedades Analíticas
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="w-25 fw-bold text-secondary">Dominio</td>
+                                    <td>$$ {{ resultado.dominio }} $$</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-secondary">Recorrido</td>
+                                    <td>$$ {{ resultado.recorrido }} $$</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-secondary">Intersección Y</td>
+                                    <td>{{ resultado.intersecciones_y }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-secondary">Raíces (Ceros)</td>
+                                    <td>$$ \{ {{ resultado.intersecciones_x }} \} $$</td>
+                                </tr>
+                                {% if resultado.evaluacion_z %}
+                                <tr class="table-warning">
+                                    <td class="fw-bold text-dark">Evaluación Z</td>
+                                    <td><strong>{{ resultado.evaluacion_z.texto }}</strong></td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
                         </table>
                     </div>
                 </div>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                <script>
-                    const ctx = document.getElementById('miGrafico').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: {{ resultado.grafico_datos.x | tojson }},
-                            datasets: [{
-                                label: 'f = {{ func_prev }}',
-                                data: {{ resultado.grafico_datos.y | tojson }},
-                                borderColor: '#0d6efd', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false
-                            }
-                            {% if resultado.evaluacion_z %}
-                            ,{
-                                label: 'Punto Evaluado',
-                                data: [{x: {{ resultado.evaluacion_z.x }}, y: {{ resultado.evaluacion_z.y }}}],
-                                backgroundColor: 'red', pointRadius: 6, type: 'scatter'
-                            }
-                            {% endif %}]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false }
-                    });
-                </script>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Procedimiento Matemático</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for paso in resultado.pasos %}
+                            <div class="list-group-item py-3">
+                                <h6 class="mb-1 text-primary fw-bold">{{ paso.titulo }}</h6>
+                                <p class="mb-1 text-muted">{{ paso.detalle | safe }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
             {% endif %}
+
         {% else %}
-            <div class="text-center py-5 text-muted"><h3>Bienvenido</h3><p>Ingresa una función para comenzar.</p></div>
+            <div class="text-center py-5 text-muted opacity-50">
+                <h3 class="fw-light">Bienvenido</h3>
+                <p>Ingresa una función a la izquierda para comenzar.</p>
+            </div>
         {% endif %}
     </div>
 </div>
